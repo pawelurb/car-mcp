@@ -1,0 +1,23 @@
+# Domyślnie wyklucz wszystko
+**
+
+# Pliki potrzebne do budowania
+!Dockerfile
+!.dockerignore
+!package.json
+!package-lock.json
+!tsconfig.json
+
+# Kod źródłowy
+!src/
+!src/**
+
+# Dane potrzebne do wyszukiwania
+!data/
+!data/manual-chunks.json
+!data/embeddings-index.json
+
+# Wyklucz również wewnątrz dozwolonych katalogów
+**/.env
+**/.env.*
+**/.DS_Store

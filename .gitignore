@@ -1,0 +1,20 @@
+# Lokalne sekrety i konfiguracja środowiska
+.env
+.env.*
+!.env.example
+
+# Zależności i wyniki kompilacji
+node_modules/
+/dist/
+*.tsbuildinfo
+
+# Pełna instrukcja i dane generowane lokalnie
+/data/
+
+# Wyniki testów i logi
+/coverage/
+*.log
+
+# Pliki systemowe macOS
+.DS_Store
+._*
