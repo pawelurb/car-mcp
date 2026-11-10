@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import type { ManualPage, ManualChunk } from './types.js';
+import type { ManualPage, ManualChunk } from '../core/types.js';
 
 function countWords(text?: string): number {
   return text?.trim().split(/\s+/).filter(Boolean).length || 0;

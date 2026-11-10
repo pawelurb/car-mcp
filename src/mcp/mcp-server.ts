@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
 
-import { searchManual } from './search.js';
+import { searchManual } from '../core/search.js';
 
 export function createServer() {
   const server = new McpServer({

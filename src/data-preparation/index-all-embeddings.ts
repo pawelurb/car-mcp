@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFile, writeFile, rename } from 'node:fs/promises';
 import OpenAI from 'openai';
 
-import type { ManualChunk, IndexedChunk } from './types.js';
+import type { ManualChunk, IndexedChunk } from '../core/types.js';
 
 const MODEL = 'text-embedding-3-small';
 

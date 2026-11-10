@@ -42,15 +42,15 @@ Strzałki w tym diagramie oznaczają przepływ danych. Skrypty uruchamiane są k
 
 ```mermaid
 flowchart TD
-    PDF["data/manual.pdf"] --> EXTRACT["src/extract-pdf.ts<br/>Odczyt tekstu każdej strony"]
+    PDF["data/manual.pdf"] --> EXTRACT["src/data-preparation/extract-pdf.ts<br/>Odczyt tekstu każdej strony"]
     EXTRACT --> PAGES["data/manual-pages.json"]
-    PAGES --> CHUNK["src/chunk-pages.ts<br/>Zdania, chunki, overlap, metadane"]
+    PAGES --> CHUNK["src/data-preparation/chunk-pages.ts<br/>Zdania, chunki, overlap, metadane"]
     CHUNK --> CHUNKS["data/manual-chunks.json"]
-    CHUNKS --> INDEXER["src/index-all-embeddings.ts<br/>Partie, SHA-256, checkpointy"]
+    CHUNKS --> INDEXER["src/data-preparation/index-all-embeddings.ts<br/>Partie, SHA-256, checkpointy"]
     INDEXER --> API["OpenAI Embeddings API"]
     API --> INDEXER
     INDEXER --> INDEX["data/embeddings-index.json"]
-    TYPES["src/types.ts<br/>Kontrakty danych"] -.-> EXTRACT
+    TYPES["src/core/types.ts<br/>Kontrakty danych"] -.-> EXTRACT
     TYPES -.-> CHUNK
     TYPES -.-> INDEXER
 ```
@@ -61,13 +61,13 @@ Strzałki pokazują wywołania i zależności. Oba transporty korzystają z tej 
 
 ```mermaid
 flowchart TD
-    CLIENT["Klient MCP / model językowy"] --> STDIO["src/server.ts<br/>Transport stdio"]
-    CLIENT --> HTTP["src/server-http.ts<br/>Streamable HTTP: /mcp"]
-    STDIO --> FACTORY["src/mcp-server.ts<br/>createServer() i search_manual"]
+    CLIENT["Klient MCP / model językowy"] --> STDIO["src/mcp/server.ts<br/>Transport stdio"]
+    CLIENT --> HTTP["src/mcp/server-http.ts<br/>Streamable HTTP: /mcp"]
+    STDIO --> FACTORY["src/mcp/mcp-server.ts<br/>createServer() i search_manual"]
     HTTP --> FACTORY
     HTTP --> HEALTH["GET /health<br/>Sprawdzenie procesu HTTP"]
-    FACTORY --> SEARCH["src/search.ts<br/>searchManual(question)"]
-    CLI["src/search-manual.ts<br/>Testowanie w terminalu"] --> SEARCH
+    FACTORY --> SEARCH["src/core/search.ts<br/>searchManual(question)"]
+    CLI["src/cli/search-manual.ts<br/>Testowanie w terminalu"] --> SEARCH
     SEARCH --> CHUNKS["data/manual-chunks.json<br/>Treść i metadane"]
     SEARCH --> INDEX["data/embeddings-index.json<br/>Wektory"]
     SEARCH --> API["OpenAI Embeddings API<br/>Wektor pytania"]
@@ -77,21 +77,40 @@ flowchart TD
     CLIENT --> ANSWER["Odpowiedź z cytowaniem źródeł"]
 ```
 
-`src/types.ts` dostarcza również typy używane przez `src/search.ts`. Link `sourceUrl` może prowadzić do PDF na S3 lub innym serwerze HTTP/HTTPS. Serwer wyszukujący nie pobiera tego pliku przy każdym pytaniu.
+`src/core/types.ts` dostarcza również typy używane przez `src/core/search.ts`. Link `sourceUrl` może prowadzić do PDF na S3 lub innym serwerze HTTP/HTTPS. Serwer wyszukujący nie pobiera tego pliku przy każdym pytaniu.
 
 ## Odpowiedzialności plików
 
+Kod jest podzielony według sposobu użycia. `core/` zawiera logikę i typy współdzielone przez pozostałe części aplikacji.
+
+```text
+src/
+├── data-preparation/
+│   ├── extract-pdf.ts
+│   ├── chunk-pages.ts
+│   └── index-all-embeddings.ts
+├── mcp/
+│   ├── mcp-server.ts
+│   ├── server.ts
+│   └── server-http.ts
+├── cli/
+│   └── search-manual.ts
+└── core/
+    ├── search.ts
+    └── types.ts
+```
+
 | Plik | Rola i zależności |
 |---|---|
-| [src/extract-pdf.ts](src/extract-pdf.ts) | Czyta lokalny PDF przez `pdfjs-dist`, zapisuje tekst i numery stron. |
-| [src/chunk-pages.ts](src/chunk-pages.ts) | Czyta strony JSON, dzieli tekst na chunki, dodaje identyfikatory i flagę ostrzeżeń. |
-| [src/index-all-embeddings.ts](src/index-all-embeddings.ts) | Czyta chunki, wybiera nowe lub zmienione fragmenty, generuje embeddingi i zapisuje checkpointy. |
-| [src/search.ts](src/search.ts) | Łączy indeks z treścią, oblicza podobieństwo do pytania i buduje linki do stron PDF. |
-| [src/search-manual.ts](src/search-manual.ts) | Wywołuje tę samą funkcję wyszukiwania z argumentem przekazanym w terminalu. |
-| [src/mcp-server.ts](src/mcp-server.ts) | Tworzy serwer MCP, definiuje schemat wejścia i obsługuje `search_manual`. |
-| [src/server.ts](src/server.ts) | Uruchamia wspólną fabrykę serwera przez stdio. |
-| [src/server-http.ts](src/server-http.ts) | Podłącza fabrykę przez adapter HTTP, obsługuje `/health`, waliduje Host i Origin. |
-| [src/types.ts](src/types.ts) | Definiuje `ManualPage`, `ManualChunk`, `EmbeddedChunk` i `IndexedChunk`. |
+| [src/data-preparation/extract-pdf.ts](src/data-preparation/extract-pdf.ts) | Czyta lokalny PDF przez `pdfjs-dist`, zapisuje tekst i numery stron. |
+| [src/data-preparation/chunk-pages.ts](src/data-preparation/chunk-pages.ts) | Czyta strony JSON, dzieli tekst na chunki, dodaje identyfikatory i flagę ostrzeżeń. |
+| [src/data-preparation/index-all-embeddings.ts](src/data-preparation/index-all-embeddings.ts) | Czyta chunki, wybiera nowe lub zmienione fragmenty, generuje embeddingi i zapisuje checkpointy. |
+| [src/core/search.ts](src/core/search.ts) | Łączy indeks z treścią, oblicza podobieństwo do pytania i buduje linki do stron PDF. |
+| [src/cli/search-manual.ts](src/cli/search-manual.ts) | Wywołuje tę samą funkcję wyszukiwania z argumentem przekazanym w terminalu. |
+| [src/mcp/mcp-server.ts](src/mcp/mcp-server.ts) | Tworzy serwer MCP, definiuje schemat wejścia i obsługuje `search_manual`. |
+| [src/mcp/server.ts](src/mcp/server.ts) | Uruchamia wspólną fabrykę serwera przez stdio. |
+| [src/mcp/server-http.ts](src/mcp/server-http.ts) | Podłącza fabrykę przez adapter HTTP, obsługuje `/health`, waliduje Host i Origin. |
+| [src/core/types.ts](src/core/types.ts) | Definiuje `ManualPage`, `ManualChunk`, `EmbeddedChunk` i `IndexedChunk`. |
 | [package.json](package.json) | Deklaruje zależności, ESM oraz polecenia budowania i uruchamiania. |
 | [package-lock.json](package-lock.json) | Zapisuje wersje zależności odtwarzane przez `npm ci`. |
 | [tsconfig.json](tsconfig.json) | Określa kompilację `src/` do `dist/` i zasady kontroli typów. |
@@ -287,7 +306,7 @@ Domyślne ustawienia obejmują polską segmentację zdań i stały offset numera
 ### 4. Wyodrębnij tekst stron
 
 ```bash
-npx tsx src/extract-pdf.ts
+npx tsx src/data-preparation/extract-pdf.ts
 ```
 
 Wynik: `data/manual-pages.json`. Sprawdź raport o stronach pustych oraz próbkę treści. Skan bez warstwy tekstowej wymaga OCR poza obecnym pipeline'em.
@@ -295,7 +314,7 @@ Wynik: `data/manual-pages.json`. Sprawdź raport o stronach pustych oraz próbk�
 ### 5. Utwórz chunki
 
 ```bash
-npx tsx src/chunk-pages.ts
+npx tsx src/data-preparation/chunk-pages.ts
 ```
 
 Wynik: `data/manual-chunks.json`. Zwróć uwagę na numery stron, czytelność tekstu i zachowanie tabel. Słowa liczone przez chunker nie są tokenami modelu.
@@ -303,7 +322,7 @@ Wynik: `data/manual-chunks.json`. Zwróć uwagę na numery stron, czytelność t
 ### 6. Wygeneruj indeks
 
 ```bash
-npx tsx src/index-all-embeddings.ts
+npx tsx src/data-preparation/index-all-embeddings.ts
 ```
 
 Wynik: `data/embeddings-index.json`. Ten etap wysyła treść fragmentów do OpenAI i zużywa tokeny API. Postęp zapisywany jest po każdej partii. Ponowne uruchomienie wykorzystuje zapisane, niezmienione wpisy.
@@ -323,7 +342,7 @@ Do samego wyszukiwania potrzebne są tylko ostatnie dwa pliki. PDF i strony JSON
 ### 7. Sprawdź wyszukiwanie i skompiluj aplikację
 
 ```bash
-npx tsx src/search-manual.ts "Jak sprawdzić poziom oleju silnikowego?"
+npx tsx src/cli/search-manual.ts "Jak sprawdzić poziom oleju silnikowego?"
 npm run build
 ```
 
@@ -371,13 +390,13 @@ Otwórz adres interfejsu wyświetlony w terminalu, połącz się i wybierz narz�
 Wariant stdio może zostać uruchomiony przez klienta MCP poleceniem:
 
 ```bash
-DOTENV_CONFIG_QUIET=true node dist/server.js
+DOTENV_CONFIG_QUIET=true node dist/mcp/server.js
 ```
 
 Przy samodzielnym uruchomieniu proces czeka na komunikaty klienta. Dla testu przez Inspector użyj:
 
 ```bash
-DOTENV_CONFIG_QUIET=true npx @modelcontextprotocol/inspector node dist/server.js
+DOTENV_CONFIG_QUIET=true npx @modelcontextprotocol/inspector node dist/mcp/server.js
 ```
 
 Klient uruchamiający stdio powinien startować proces w katalogu projektu. Samo podanie bezwzględnej ścieżki do `server.js` nie zmienia katalogu roboczego i może spowodować błędy odczytu danych.

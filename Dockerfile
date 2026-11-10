@@ -32,4 +32,4 @@ USER node
 
 EXPOSE 3000
 
-CMD ["node", "dist/server-http.js"]
+CMD ["node", "dist/mcp/server-http.js"]

@@ -1,4 +1,4 @@
-import { searchManual } from './search.js';
+import { searchManual } from '../core/search.js';
 
 async function main() {
   const question = process.argv.slice(2).join(' ').trim();

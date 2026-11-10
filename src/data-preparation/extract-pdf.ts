@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import type { ManualPage } from './types.js';
+import type { ManualPage } from '../core/types.js';
 
 async function main() {
   const pdfBuffer = await readFile('data/manual.pdf');
